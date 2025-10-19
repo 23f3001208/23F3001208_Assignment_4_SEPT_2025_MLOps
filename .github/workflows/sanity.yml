@@ -42,6 +42,11 @@ jobs:
           echo "### 🔹 Test Results" >> report.md
           cat test_output.txt >> report.md
           echo "" >> report.md
+      
+          echo "### 🔹 Metrics from Training" >> report.md
+          find artifacts -name "metrics.csv" -type f -exec cat {} \; >> report.md || echo "No Metrics Found."
+      
+          npx @dvcorg/cml comment create report.md --publish
 
           echo "### 🔹 Metrics from Training" >> report.md
           cat artifacts/*/metrics.csv >> report.md || echo "No Metrics Found."
