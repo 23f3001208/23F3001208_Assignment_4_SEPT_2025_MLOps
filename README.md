@@ -1,4 +1,4 @@
-# Iris Classification MLOps Project with Data Augmentation
+# Iris Classification MLOps Project
 
 This project implements an end-to-end MLOps pipeline for training and evaluating an Iris flower classification model using Decision Tree Classifier. It includes data augmentation to enhance the dataset and improve model robustness.
 
