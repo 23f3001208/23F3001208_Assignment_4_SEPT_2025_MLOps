@@ -46,4 +46,4 @@ jobs:
           echo "### 🔹 Metrics from Training" >> report.md
           cat artifacts/*/metrics.csv >> report.md || echo "No Metrics Found."
 
-          npx @dvcorg/cml comment --publish report.md
+          npx @dvcorg/cml comment create report.md --publish
