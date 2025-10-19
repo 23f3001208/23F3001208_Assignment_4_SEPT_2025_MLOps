@@ -30,21 +30,14 @@ jobs:
           pip install -r requirements.txt
 
       - name: Pull DVC artifacts (model + data)
-        env:
-          # Set these in repo Settings → Secrets
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
         run: |
-          dvc pull || echo "No DVC remote found or credentials missing."
+          dvc pull || echo "No DVC Remote Found"
 
       - name: Run unit tests
         run: |
           python -m unittest test.py -v | tee test_output.txt
 
-      - name: Create and publish CML report
-        env:
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create report
         run: |
           echo "## ✅ Sanity Test Report" > report.md
           echo "### 🔹 Test Results" >> report.md
@@ -52,5 +45,9 @@ jobs:
           echo "" >> report.md
           echo "### 🔹 Metrics from Training" >> report.md
           cat artifacts/*/metrics.csv >> report.md
-          npx @cml/comment --publish report.md
 
+      - name: Publish CML report on PR
+        uses: iterative/cml@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          file: report.md
