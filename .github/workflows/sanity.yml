@@ -27,12 +27,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Pull DVC artifacts (model + data)
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
         run: |
-          dvc pull || echo "No DVC remote found or credentials missing."
+          dvc pull || echo "No DVC Remote Found"
 
       - name: Run unit tests
         run: |
@@ -48,6 +44,6 @@ jobs:
           echo "" >> report.md
 
           echo "### 🔹 Metrics from Training" >> report.md
-          cat artifacts/*/metrics.csv >> report.md || echo "No metrics found."
+          cat artifacts/*/metrics.csv >> report.md || echo "No Metrics Found."
 
-          npx @cml/comment --publish report.md
+          npx @dvcorg/cml comment --publish report.md
