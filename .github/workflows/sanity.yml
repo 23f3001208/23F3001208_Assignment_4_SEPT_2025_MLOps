@@ -1,0 +1,56 @@
+name: Sanity Test IRIS v2.0
+
+on:
+  push:
+    branches: [ dev, main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  test_model:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Setup DVC
+        uses: iterative/setup-dvc@v2
+
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+
+      - name: Pull DVC artifacts (model + data)
+        env:
+          # Set these in repo Settings → Secrets
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        run: |
+          dvc pull || echo "No DVC remote found or credentials missing."
+
+      - name: Run unit tests
+        run: |
+          python -m unittest test.py -v | tee test_output.txt
+
+      - name: Create and publish CML report
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "## ✅ Sanity Test Report" > report.md
+          echo "### 🔹 Test Results" >> report.md
+          cat test_output.txt >> report.md
+          echo "" >> report.md
+          echo "### 🔹 Metrics from Training" >> report.md
+          cat artifacts/*/metrics.csv >> report.md
+          npx @cml/comment --publish report.md
+

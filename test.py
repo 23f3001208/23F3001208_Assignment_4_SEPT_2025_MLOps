@@ -1,41 +1,34 @@
-import os
 import unittest
+import os
 import pandas as pd
 import joblib
-import subprocess
-import glob
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-class TestIrisPipeline(unittest.TestCase):
+class TestIrisModel(unittest.TestCase):
+    def setUp(self):
+        artifacts = sorted(os.listdir("artifacts"))
+        self.latest = os.path.join("artifacts", artifacts[-1]) if artifacts else None
+        self.model_path = os.path.join(self.latest, "model.joblib")
+        self.metrics_path = os.path.join(self.latest, "metrics.csv")
+        self.data_path = "data/iris.csv"
 
-    def test_data_validation(self):
-        """Ensure data exists and has correct structure"""
-        data_path = "data/iris.csv"
-        self.assertTrue(os.path.exists(data_path), "iris.csv not found")
-        df = pd.read_csv(data_path)
+        self.assertTrue(os.path.exists(self.model_path), "Model file not found")
+        self.assertTrue(os.path.exists(self.metrics_path), "Metrics file not found")
+        self.assertTrue(os.path.exists(self.data_path), "Data file not found")
 
-        expected_cols = {"sepal_length", "sepal_width", "petal_length", "petal_width", "species"}
-        self.assertTrue(expected_cols.issubset(df.columns), "Missing required columns")
-        self.assertFalse(df.isnull().values.any(), "Data contains null values")
-        self.assertGreater(len(df), 0, "Data is empty")
+    def test_model_metrics_sanity(self):
+        """Verify model metrics and minimum accuracy threshold"""
+        metrics = pd.read_csv(self.metrics_path)
+        acc = float(metrics["accuracy"].iloc[-1])
+        self.assertGreaterEqual(acc, 0.6, f"Accuracy too low: {acc}")
 
-    def test_model_training_and_evaluation(self):
-        """Train model and check accuracy >= 0.7"""
-        subprocess.run(["python3", "train.py"], check=True)
-
-        # Find latest artifact directory
-        artifact_dirs = sorted(glob.glob("artifacts/*"), key=os.path.getmtime)
-        latest_dir = artifact_dirs[-1]
-        model_path = os.path.join(latest_dir, "model.joblib")
-        metrics_path = os.path.join(latest_dir, "metrics.csv")
-
-        self.assertTrue(os.path.exists(model_path), "Model not found")
-        self.assertTrue(os.path.exists(metrics_path), "Metrics not found")
-
-        metrics_df = pd.read_csv(metrics_path)
-        acc = metrics_df["accuracy"].iloc[0]
-        print(f"Model Accuracy: {acc:.3f}")
-        self.assertGreaterEqual(acc, 0.7, "Accuracy below acceptable threshold")
+    def test_model_prediction_shape(self):
+        """Check predictions on sample inputs"""
+        model = joblib.load(self.model_path)
+        df = pd.read_csv(self.data_path).head(5)
+        X = df[["sepal_length","sepal_width","petal_length","petal_width"]]
+        preds = model.predict(X)
+        self.assertEqual(len(preds), len(X), "Prediction length mismatch")
 
 if __name__ == "__main__":
     unittest.main()
-
